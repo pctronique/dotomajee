@@ -1,0 +1,11 @@
+sgbd_type = mysql
+sgbd_host = localhost
+sgbd_port = 0
+sgbd_dbname = project
+sgbd_user = root
+sgbd_pass = 
+sgbd_prefix = 
+email_host = mailhog
+email_port = 1025
+email_user = 
+email_pass = 

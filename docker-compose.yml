@@ -1,0 +1,100 @@
+services:
+###########################
+# Setup the JAVA container
+###########################
+    tomcat:
+        container_name: ${NAME_PROJECT}_tomcat
+        restart: always
+        build: 
+            context: ./.docker/images/tomcat/
+            args:
+                - VALUE_TOMCAT_VERSION=${VALUE_TOMCAT_VERSION}
+                - VALUE_JAVA_VERSION=${VALUE_JAVA_VERSION}
+        tty: true
+        stdin_open: true
+        volumes:
+            - ./.dockertmp/log/tomcat/:/usr/local/tomcat/logs:rw
+            - ./project/.webapps:/usr/local/tomcat/webapps:rw
+            - ./.env:/usr/local/tomcat/webapps/${FOLDER_CONFIG}/.env:rw
+            - ./config/config.properties:/usr/local/tomcat/webapps/${FOLDER_CONFIG}/config.properties:rw
+            - ./.dockertmp/tomcat:/jvm:rw
+        ports:
+            - ${VALUE_TOMCAT_PORT}:8080
+
+###########################
+# Setup the JAVA container
+###########################
+    linux_java:
+        container_name: ${NAME_PROJECT}_java
+        restart: always
+        build: 
+            context: ./.docker/images/linux_java/
+            args:
+                - VALUE_UBUNTU_VERSION=${VALUE_UBUNTU_VERSION}
+                - VALUE_JAVA_VERSION=${VALUE_JAVA_VERSION}
+        tty: true
+        stdin_open: true
+        volumes:
+            - ./.dockertmp/log/java/:/var/log/docker/java/:rw
+            - ./project:/home/project/:rw
+            - ./config/data:/docker-entrypoint-initdata.d:rw
+            - ./config/dockercron:/var/docker/cron/dockercron:rw
+            - ./.dockertmp/tomcat:/var/docker/tomcat:rw
+            - ./.dockertmp/jvm:/jvm:rw
+        environment:
+            - JAVA_NAME_PROJECT=${NAME_PROJECT}
+            
+###########################
+# Setup the Database (MariaDB) container
+###########################
+    mariadb:
+        container_name: ${NAME_PROJECT}_mariadb
+        restart: always
+        image: mariadb:${VALUE_MARIABD_VERSION}
+        volumes:
+            - ./.docker/containers/mariadb/mariadb.cnf:/etc/mysql/conf.d/mariadb.cnf:ro
+            - ./config/sgbd_data:/docker-entrypoint-initdb.d/:rw
+            - ./.dockertmp/log/mariadb:/var/log/mariadb:rw
+            - ./.dockertmp/tmp/mariadb:/var/tmp/mariadb:rw
+            - ./.dockertmp/mariadb_data:/var/lib/mysql
+        environment:
+            - TZ=${VALUE_TIMEZONES}
+            - MYSQL_DATABASE=${SGBD_DATABASE}
+            - MYSQL_ROOT_PASSWORD=${SGBD_PASSWORD}
+            
+###########################
+# Setup the PhpMyAdmin container
+###########################
+    myadmin:
+        container_name: ${NAME_PROJECT}_phpmyadmin
+        restart: always
+        image: phpmyadmin/phpmyadmin:${VALUE_PHPMYADMIN_VERSION}
+        environment:
+            - PMA_PORT=3306
+            - PMA_HOST=${NAME_PROJECT}_mariadb
+            - PMA_USER=root
+            - PMA_PASSWORD=${SGBD_PASSWORD}
+        ports:
+            - ${VALUE_PHPMYADMIN_PORT}:80
+        depends_on: 
+            - mariadb
+            
+###########################
+# Setup the mailhog container
+###########################
+    mailhog:
+        build:
+            context: .docker/images/mailhog
+            args:
+                - VALUE_MHOG_VERSION=${VALUE_MAILHOG_VERSION}
+        container_name: ${NAME_PROJECT}_mailhog
+        restart: always
+        volumes:
+            - ./.dockertmp/mailhog:/mailhog
+            - ./config/email_data:/docker-entrypoint-initdata.d:rw
+        environment:
+            - MH_STORAGE=maildir
+            - MH_MAILDIR_PATH=/mailhog
+        ports:
+            - ${VALUE_MAILHOG_PORT}:8025
+            

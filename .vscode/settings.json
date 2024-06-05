@@ -1,0 +1,7 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        ".dockertmp/tomcat/tomcat/lib/**/*.jar",
+        "project/lib/**/*.jar"
+    ]
+}
