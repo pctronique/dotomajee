@@ -26,5 +26,6 @@
 /project/.webapps/config/config.properties
 /project/.webapps/data/
 /project/.webapps/ROOT/
+/project/.webapps/ROOT.war
 /tmp
 /test
